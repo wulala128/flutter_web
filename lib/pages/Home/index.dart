@@ -1,16 +1,16 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_web/api/request.dart';
+import 'package:flutter_web/utils/DioRequest.dart';
 
-class FulState extends StatefulWidget {
+class HomeView extends StatefulWidget {
   final String? message;
-  const FulState({super.key, this.message});
+  const HomeView({super.key, this.message});
 
   @override
-  State<FulState> createState() => _FulStateState();
+  State<HomeView> createState() => _HomeViewState();
 }
 
-class _FulStateState extends State<FulState> {
+class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
@@ -20,13 +20,12 @@ class _FulStateState extends State<FulState> {
   List<Map<String, dynamic>> _list = [];
 
   void _getChannels() async {
-    DioUtils request = DioUtils();
     try {
-      Response response = await request.get('channels');
-      print(response.data['data']);
+      Map<String, dynamic> response = await dioRequest.get('home/category/head');
       setState(() {
-        _list = List<Map<String, dynamic>>.from(response.data['data']['channels']);
+        _list = List<Map<String, dynamic>>.from(response['result']);
       });
+    // ignore: empty_catches
     } catch (e) {
       print(e);
     }
@@ -39,7 +38,7 @@ class _FulStateState extends State<FulState> {
   }
 
   @override
-  void didUpdateWidget(covariant FulState oldWidget) {
+  void didUpdateWidget(covariant HomeView oldWidget) {
     // TODO: implement didUpdateWidget
     super.didUpdateWidget(oldWidget);
   }

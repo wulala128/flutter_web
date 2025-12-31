@@ -1,17 +1,18 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_web/contants/index.dart';
 
-class DioUtils {
+class DioRequest {
   final Dio _dio = Dio();
 
-  DioUtils() {
+  DioRequest() {
     String baseUrl = '';
     if (kReleaseMode) {
-      baseUrl = "";
+      baseUrl = GlobalConstants.BASE_URL;
     }
     // 判断是否是调试模式
     if (kDebugMode) {
-      baseUrl = "https://geek.itheima.net/v1_0/";
+      baseUrl = GlobalConstants.DEV_BASE_URL;
     }
     _dio.options.baseUrl = baseUrl;
     _dio.options.connectTimeout = Duration(seconds: 10);
@@ -46,8 +47,32 @@ class DioUtils {
     );
   }
 
-  // get请求
-  Future<Response<dynamic>> get(String path, {Map<String, dynamic>? params}) {
-    return _dio.get(path, queryParameters: params);
+  Future<dynamic> _handleResponse(Future<Response<dynamic>> task) async {
+    try {
+      Response<dynamic> res = await task;
+      final data = res.data as Map<String, dynamic>;
+      if (data["code"] == GlobalConstants.SUCCESS_CODE) {
+        return data;
+      }
+      // 抛出异常
+      throw DioException(
+        requestOptions: res.requestOptions,
+        message: data["msg"] ?? "加载数据失败",
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // get
+  Future<dynamic> get(String url, {Map<String, dynamic>? params}) {
+    return _handleResponse(_dio.get(url, queryParameters: params));
+  }
+
+  // post
+  Future<dynamic> post(String url, {Map<String, dynamic>? data}) {
+    return _handleResponse(_dio.post(url, data: data));
   }
 }
+
+final dioRequest = DioRequest(); // 单例对象

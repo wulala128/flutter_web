@@ -12,26 +12,26 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
-  final List<Map<String, String>> _tabList = [
+  List tabData = [
     {
-      "icon": "ic_public_home_normal.png",
-      "active_icon": "ic_public_home_active.png",
-      "text": "首页",
+      "name": "首页",
+      "icon": "lib/assets/ic_public_home_normal.png",
+      "active_icon": "lib/assets/ic_public_home_active.png",
     },
     {
-      "icon": "ic_public_pro_normal.png",
-      "active_icon": "ic_public_pro_active.png",
-      "text": "分类",
+      "name": "分类",
+      "icon": "lib/assets/ic_public_pro_normal.png",
+      "active_icon": "lib/assets/ic_public_pro_active.png",
     },
     {
-      "icon": "ic_public_cart_normal.png",
-      "active_icon": "ic_public_cart_active.png",
-      "text": "购物车",
+      "name": "购物车",
+      "icon": "lib/assets/ic_public_cart_normal.png",
+      "active_icon": "lib/assets/ic_public_cart_active.png",
     },
     {
-      "icon": "ic_public_my_normal.png",
-      "active_icon": "ic_public_my_active.png",
-      "text": "我的",
+      "name": "我的",
+      "icon": "lib/assets/ic_public_my_normal.png",
+      "active_icon": "lib/assets/ic_public_my_active.png",
     },
   ];
   int _currentIndex = 0;
@@ -42,12 +42,12 @@ class _MainPageState extends State<MainPage> {
 
   List<BottomNavigationBarItem> _getTabBarWidget() {
     List<BottomNavigationBarItem> list = [];
-    for (var item in _tabList) {
+    for (var item in tabData) {
       list.add(
         BottomNavigationBarItem(
           icon: Image.asset(item["icon"]!, width: 30, height: 30),
           activeIcon: Image.asset(item["active_icon"]!, width: 30, height: 30),
-          label: item["text"],
+          label: item["name"],
         ),
       );
     }

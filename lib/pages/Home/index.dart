@@ -49,11 +49,13 @@ class _HomeViewState extends State<HomeView> {
 
   void _getChannels() async {
     try {
-      Map<String, dynamic> response = await dioRequest.get('home/category/head');
+      Map<String, dynamic> response = await dioRequest.get(
+        'home/category/head',
+      );
       setState(() {
         _list = List<Map<String, dynamic>>.from(response['result']);
       });
-    // ignore: empty_catches
+      // ignore: empty_catches
     } catch (e) {
       print(e);
     }
@@ -88,10 +90,7 @@ class _HomeViewState extends State<HomeView> {
     return Column(
       children: [
         // 顶部轮播图区域
-        CarouselWidget(
-          banners: _banners,
-          height: 200,
-        ),
+        CarouselWidget(banners: _banners, height: 200),
         // 原有分类列表内容
         Expanded(
           child: Container(
@@ -102,6 +101,35 @@ class _HomeViewState extends State<HomeView> {
                 var item = _list[index];
                 return Text('${item['name']}'); // 渲染name字段
               },
+            ),
+          ),
+        ),
+        SizedBox(
+          height: 210,
+          child: Card(
+            child: Column(
+              children: [
+                ListTile(
+                  title: const Text(
+                    '1625 Main Street',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  subtitle: const Text('My City, CA 99984'),
+                  leading: Icon(Icons.restaurant_menu, color: Colors.blue[500]),
+                ),
+                const Divider(),
+                ListTile(
+                  title: const Text(
+                    '(408) 555-1212',
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  leading: Icon(Icons.contact_phone, color: Colors.blue[500]),
+                ),
+                ListTile(
+                  title: const Text('costa@example.com'),
+                  leading: Icon(Icons.contact_mail, color: Colors.blue[500]),
+                ),
+              ],
             ),
           ),
         ),

@@ -22,25 +22,51 @@ class CarouselWidget extends StatefulWidget {
 
 class _CarouselWidgetState extends State<CarouselWidget> {
   late PageController _pageController;
-  late Timer _autoPlayTimer;
+  Timer? _autoPlayTimer;
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
-    _startAutoPlay();
+    // 延迟启动自动轮播，确保 PageController 已就绪
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _startAutoPlay();
+    });
+  }
+
+  @override
+  void didUpdateWidget(CarouselWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 当 banners 列表变化时，重新启动自动轮播
+    if (oldWidget.banners.length != widget.banners.length) {
+      _stopAutoPlay();
+      // 延迟启动，确保 PageController 已就绪
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _startAutoPlay();
+        }
+      });
+    }
   }
 
   @override
   void dispose() {
-    _autoPlayTimer.cancel();
+    _stopAutoPlay();
     _pageController.dispose();
     super.dispose();
   }
 
+  /// 停止自动轮播
+  void _stopAutoPlay() {
+    _autoPlayTimer?.cancel();
+    _autoPlayTimer = null;
+  }
+
   /// 启动自动轮播（3秒间隔）
   void _startAutoPlay() {
+    // 先停止之前的定时器
+    _stopAutoPlay();
     // 只有至少2张Banner时才自动轮播
     if (widget.banners.length < 2) return;
 
@@ -55,7 +81,8 @@ class _CarouselWidgetState extends State<CarouselWidget> {
 
   /// 切换到下一页
   void _nextPage() {
-    if (!_pageController.hasClients) return;
+    if (!mounted || !_pageController.hasClients) return;
+    if (widget.banners.isEmpty) return;
     int nextIndex = (_currentIndex + 1) % widget.banners.length;
     _pageController.animateToPage(
       nextIndex,
@@ -77,7 +104,6 @@ class _CarouselWidgetState extends State<CarouselWidget> {
     if (widget.banners.isEmpty) {
       return const SizedBox.shrink();
     }
-
     // 只有一张Banner时，不显示指示器，也不自动轮播
     bool showIndicator = widget.banners.length > 1;
 
@@ -150,15 +176,26 @@ class _CarouselWidgetState extends State<CarouselWidget> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
         widget.banners.length,
-        (index) => Container(
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: _currentIndex == index
-                ? Colors.white
-                : Colors.white.withOpacity(0.5),
+        (index) => GestureDetector(
+          onTap: () {
+            if (_pageController.hasClients) {
+              _pageController.animateToPage(
+                index,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            }
+          },
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: _currentIndex == index
+                  ? Colors.white
+                  : Colors.white.withOpacity(0.5),
+            ),
           ),
         ),
       ),

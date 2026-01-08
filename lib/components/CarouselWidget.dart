@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_web/viewmodels/home.dart';
 
 /// 首页顶部轮播图组件
-/// 支持3秒自动轮播、左右滑动切换、小圆点指示器
+/// 支持1秒自动轮播、左右滑动切换、小圆点指示器
 class CarouselWidget extends StatefulWidget {
   final List<BannerItem> banners;
   final double height;
@@ -24,11 +24,13 @@ class _CarouselWidgetState extends State<CarouselWidget> {
   late PageController _pageController;
   Timer? _autoPlayTimer;
   int _currentIndex = 0;
+  static const int _initialPage = 10000; // 设置一个很大的初始页面索引以实现无限循环
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
+    // 从中间位置开始，实现无限循环
+    _pageController = PageController(initialPage: _initialPage);
     // 延迟启动自动轮播，确保 PageController 已就绪
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _startAutoPlay();
@@ -50,6 +52,12 @@ class _CarouselWidgetState extends State<CarouselWidget> {
     }
   }
 
+  /// 将页面索引转换为实际索引
+  int _getRealIndex(int pageIndex) {
+    if (widget.banners.isEmpty) return 0;
+    return pageIndex % widget.banners.length;
+  }
+
   @override
   void dispose() {
     _stopAutoPlay();
@@ -63,14 +71,14 @@ class _CarouselWidgetState extends State<CarouselWidget> {
     _autoPlayTimer = null;
   }
 
-  /// 启动自动轮播（3秒间隔）
+  /// 启动自动轮播（1秒间隔）
   void _startAutoPlay() {
     // 先停止之前的定时器
     _stopAutoPlay();
     // 只有至少2张Banner时才自动轮播
     if (widget.banners.length < 2) return;
 
-    _autoPlayTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+    _autoPlayTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
@@ -83,9 +91,12 @@ class _CarouselWidgetState extends State<CarouselWidget> {
   void _nextPage() {
     if (!mounted || !_pageController.hasClients) return;
     if (widget.banners.isEmpty) return;
-    int nextIndex = (_currentIndex + 1) % widget.banners.length;
+    // 直接跳到下一页，实现无限循环
+    double? currentPage = _pageController.page;
+    if (currentPage == null) return;
+    int nextPage = currentPage.round() + 1;
     _pageController.animateToPage(
-      nextIndex,
+      nextPage,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
@@ -94,8 +105,23 @@ class _CarouselWidgetState extends State<CarouselWidget> {
   /// 处理页面切换
   void _onPageChanged(int index) {
     setState(() {
-      _currentIndex = index;
+      _currentIndex = _getRealIndex(index);
     });
+    
+    // 当接近边界时，无缝跳转到中间位置（实现无限循环）
+    if (widget.banners.isNotEmpty && widget.banners.length > 1) {
+      // 如果当前页面距离初始位置太远，跳回中间位置
+      int distanceFromInitial = (index - _initialPage).abs();
+      if (distanceFromInitial > widget.banners.length * 10) {
+        int realIndex = _getRealIndex(index);
+        int targetPage = _initialPage + realIndex;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _pageController.hasClients) {
+            _pageController.jumpToPage(targetPage);
+          }
+        });
+      }
+    }
   }
 
   @override
@@ -115,9 +141,10 @@ class _CarouselWidgetState extends State<CarouselWidget> {
           PageView.builder(
             controller: _pageController,
             onPageChanged: _onPageChanged,
-            itemCount: widget.banners.length,
+            itemCount: widget.banners.isEmpty ? 0 : null, // 设置为 null 实现无限循环
             itemBuilder: (context, index) {
-              final banner = widget.banners[index];
+              final realIndex = _getRealIndex(index);
+              final banner = widget.banners[realIndex];
               return _buildBannerItem(banner);
             },
           ),
@@ -179,11 +206,18 @@ class _CarouselWidgetState extends State<CarouselWidget> {
         (index) => GestureDetector(
           onTap: () {
             if (_pageController.hasClients) {
-              _pageController.animateToPage(
-                index,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              );
+              // 计算目标页面索引（基于当前页面位置）
+              double? currentPage = _pageController.page;
+              if (currentPage != null) {
+                int currentPageInt = currentPage.round();
+                int currentRealIndex = _getRealIndex(currentPageInt);
+                int targetPage = currentPageInt - currentRealIndex + index;
+                _pageController.animateToPage(
+                  targetPage,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              }
             }
           },
           child: Container(
